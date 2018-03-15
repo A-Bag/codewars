@@ -1,0 +1,8 @@
+rootProject.name = 'codewars'
+include 'valid-braces'
+include 'sudoku-solution-validator'
+include 'roman-numerals-encoder'
+include 'hackerrank'
+include 'sum-by-factors'
+include 'best-travel'
+
