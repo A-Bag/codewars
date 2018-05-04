@@ -5,4 +5,5 @@ include 'roman-numerals-encoder'
 include 'hackerrank'
 include 'sum-by-factors'
 include 'best-travel'
+include 'the-lift'
 
