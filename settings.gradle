@@ -6,4 +6,5 @@ include 'hackerrank'
 include 'sum-by-factors'
 include 'best-travel'
 include 'the-lift'
+include 'check-and-mate'
 
