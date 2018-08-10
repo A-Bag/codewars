@@ -77,7 +77,8 @@ public class CheckAndMate {
     }
 
     private static boolean checkIfKnightCanBeatKing(PieceConfig beatingPiece, PieceConfig king, PieceConfig[] arrPieces) {
-        return false;
+        List<PieceConfig> potentialMoves = findPotentialKnightMoves(beatingPiece);
+        return isKingInPotentialMoves(king, potentialMoves);
     }
 
     private static boolean checkIfBishopCanBeatKing(PieceConfig beatingPiece, PieceConfig king, PieceConfig[] arrPieces) {
@@ -114,6 +115,19 @@ public class CheckAndMate {
                 potentialMoves.add(new PieceConfig(rook.getPiece(), rook.getOwner(), i, rook.getY()));
             }
         }
+        return potentialMoves;
+    }
+
+    private static List<PieceConfig> findPotentialKnightMoves(PieceConfig knight) {
+        List<PieceConfig> potentialMoves = new ArrayList<>();
+        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()+2, knight.getY()+1));
+        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()-2, knight.getY()+1));
+        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()+1, knight.getY()+2));
+        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()-1, knight.getY()+2));
+        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()+2, knight.getY()-1));
+        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()-2, knight.getY()-1));
+        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()+1, knight.getY()-2));
+        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()-1, knight.getY()-2));
         return potentialMoves;
     }
 
