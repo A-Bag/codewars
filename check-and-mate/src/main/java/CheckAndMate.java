@@ -90,11 +90,12 @@ public class CheckAndMate {
     }
 
     private static boolean checkIfQueenCanBeatKing(PieceConfig beatingPiece, PieceConfig king, PieceConfig[] arrPieces) {
-        return false;
+        return checkIfBishopCanBeatKing(beatingPiece, king, arrPieces) || checkIfRookCanBeatKing(beatingPiece, king, arrPieces);
     }
 
     private static boolean checkIfKingCanBeatKing(PieceConfig beatingPiece, PieceConfig king, PieceConfig[] arrPieces) {
-        return false;
+        List<PieceConfig> potentialMoves = findPotentialKingMoves(beatingPiece);
+        return isKingInPotentialMoves(king, potentialMoves);
     }
 
     private static List<PieceConfig> findPositionsBetweenBishopAndKing(PieceConfig beatingPiece, PieceConfig king) {
@@ -164,6 +165,19 @@ public class CheckAndMate {
                 potentialMoves.add(new PieceConfig(rook.getPiece(), rook.getOwner(), i, rook.getY()));
             }
         }
+        return potentialMoves;
+    }
+
+    private static List<PieceConfig> findPotentialKingMoves(PieceConfig knight) {
+        List<PieceConfig> potentialMoves = new ArrayList<>();
+        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX(), knight.getY()+1));
+        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()-1, knight.getY()+1));
+        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()+1, knight.getY()+1));
+        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX(), knight.getY()-1));
+        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()-1, knight.getY()-1));
+        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()+1, knight.getY()-1));
+        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()-1, knight.getY()));
+        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()+1, knight.getY()));
         return potentialMoves;
     }
 
