@@ -38,10 +38,6 @@ public class CheckAndMate {
         }
     }
 
-    private static int getOpponent(int player) {
-        return player == 0 ? 1 : 0;
-    }
-
     private static boolean checkIfPawnCanBeatKing(PieceConfig beatingPiece, PieceConfig king, PieceConfig[] arrPieces) {
         List<PieceConfig> potentialBeatMoves = findPotentialPawnBeatMoves(beatingPiece);
         List<PieceConfig> beatMoves = potentialBeatMoves.stream()
@@ -82,7 +78,15 @@ public class CheckAndMate {
     }
 
     private static boolean checkIfBishopCanBeatKing(PieceConfig beatingPiece, PieceConfig king, PieceConfig[] arrPieces) {
-        return false;
+        List<PieceConfig> potentialMoves = findPotentialBishopMoves(beatingPiece);
+        boolean isKingInPotentialMoves = isKingInPotentialMoves(king, potentialMoves);
+        boolean isWayToKingFree = false;
+        if (isKingInPotentialMoves) {
+            List<PieceConfig> positionsBetweenBishopAndKing = findPositionsBetweenBishopAndKing(beatingPiece, king);
+            isWayToKingFree = positionsBetweenBishopAndKing.stream()
+                    .noneMatch(position -> isPositionOccupied(position.getX(), position.getY(), arrPieces));
+        }
+        return isWayToKingFree;
     }
 
     private static boolean checkIfQueenCanBeatKing(PieceConfig beatingPiece, PieceConfig king, PieceConfig[] arrPieces) {
@@ -91,6 +95,51 @@ public class CheckAndMate {
 
     private static boolean checkIfKingCanBeatKing(PieceConfig beatingPiece, PieceConfig king, PieceConfig[] arrPieces) {
         return false;
+    }
+
+    private static List<PieceConfig> findPositionsBetweenBishopAndKing(PieceConfig beatingPiece, PieceConfig king) {
+        List<PieceConfig> positions = new ArrayList<>();
+        int xLength = king.getX() - beatingPiece.getX();
+        int yLength = king.getY() - beatingPiece.getY();
+        if (xLength > 0 && yLength > 0) {
+            for (int i=1; i<xLength; i++) {
+                positions.add(new PieceConfig(beatingPiece.getPiece(), beatingPiece.getOwner(), beatingPiece.getX()+i, beatingPiece.getY()+i));
+            }
+        } else if (xLength > 0 && yLength < 0) {
+            for (int i=1; i<xLength; i++) {
+                positions.add(new PieceConfig(beatingPiece.getPiece(), beatingPiece.getOwner(), beatingPiece.getX()+i, beatingPiece.getY()-i));
+            }
+        } else if (xLength < 0 && yLength > 0) {
+            xLength = -xLength;
+            for (int i=1; i<xLength; i++) {
+                positions.add(new PieceConfig(beatingPiece.getPiece(), beatingPiece.getOwner(), beatingPiece.getX()-i, beatingPiece.getY()+i));
+            }
+        } else {
+            xLength = -xLength;
+            for (int i=1; i<xLength; i++) {
+                positions.add(new PieceConfig(beatingPiece.getPiece(), beatingPiece.getOwner(), beatingPiece.getX()-i, beatingPiece.getY()-i));
+            }
+        }
+        return positions;
+    }
+
+    private static List<PieceConfig> findPotentialBishopMoves(PieceConfig bishop) {
+        List<PieceConfig> potentialMoves = new ArrayList<>();
+        for (int i=0; i<8; i++) {
+            if (bishop.getX()+i < 8 && bishop.getY()+i < 8) {
+                potentialMoves.add(new PieceConfig(bishop.getPiece(), bishop.getOwner(), bishop.getX()+i, bishop.getY()+i));
+            }
+            if (bishop.getX()+i < 8 && bishop.getY()-i > -1) {
+                potentialMoves.add(new PieceConfig(bishop.getPiece(), bishop.getOwner(), bishop.getX()+i, bishop.getY()-i));
+            }
+            if (bishop.getX()-i > -1 && bishop.getY()+i < 8) {
+                potentialMoves.add(new PieceConfig(bishop.getPiece(), bishop.getOwner(), bishop.getX()-i, bishop.getY()+i));
+            }
+            if (bishop.getX()-i > -1 && bishop.getY()-i > -1) {
+                potentialMoves.add(new PieceConfig(bishop.getPiece(), bishop.getOwner(), bishop.getX()-i, bishop.getY()-i));
+            }
+        }
+        return potentialMoves;
     }
 
     private static List<PieceConfig> findPotentialPawnBeatMoves(PieceConfig beatingPiece) {
@@ -107,7 +156,7 @@ public class CheckAndMate {
 
     private static List<PieceConfig> findPotentialRookMoves(PieceConfig rook) {
         List<PieceConfig> potentialMoves = new ArrayList<>();
-        for (int i=0; i<9; i++) {
+        for (int i=0; i<8; i++) {
             if (i != rook.getY()) {
                 potentialMoves.add(new PieceConfig(rook.getPiece(), rook.getOwner(), rook.getX(), i));
             }

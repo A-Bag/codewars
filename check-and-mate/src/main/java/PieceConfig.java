@@ -1,3 +1,5 @@
+import java.util.Objects;
+
 public class PieceConfig {
     /*{
         'piece':string,     // pawn, rook, knight, bishop, queen or king
@@ -67,5 +69,22 @@ public class PieceConfig {
                 ", x=" + x +
                 ", y=" + y +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PieceConfig that = (PieceConfig) o;
+        return owner == that.owner &&
+                x == that.x &&
+                y == that.y &&
+                Objects.equals(piece, that.piece);
+    }
+
+    @Override
+    public int hashCode() {
+
+        return Objects.hash(piece, owner, x, y);
     }
 }
