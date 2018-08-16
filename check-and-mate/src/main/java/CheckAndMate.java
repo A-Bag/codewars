@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -14,6 +15,30 @@ public class CheckAndMate {
     }
 
     public static boolean isMate(final PieceConfig[] arrPieces, int player) {
+        if (isCheck(arrPieces, player).isEmpty()) {
+            return false;
+        }
+        if (kingHasPossibilityToMove()) {
+            return false;
+        }
+        if (threateningPieceCanBeBeaten()) {
+            return false;
+        }
+        if (otherPieceCanBlockThreateningPiece()) {
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean kingHasPossibilityToMove() {
+        return false;
+    }
+
+    private static boolean threateningPieceCanBeBeaten() {
+        return false;
+    }
+
+    private static boolean otherPieceCanBlockThreateningPiece() {
         return false;
     }
 
@@ -168,16 +193,16 @@ public class CheckAndMate {
         return potentialMoves;
     }
 
-    private static List<PieceConfig> findPotentialKingMoves(PieceConfig knight) {
+    private static List<PieceConfig> findPotentialKingMoves(PieceConfig king) {
         List<PieceConfig> potentialMoves = new ArrayList<>();
-        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX(), knight.getY()+1));
-        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()-1, knight.getY()+1));
-        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()+1, knight.getY()+1));
-        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX(), knight.getY()-1));
-        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()-1, knight.getY()-1));
-        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()+1, knight.getY()-1));
-        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()-1, knight.getY()));
-        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()+1, knight.getY()));
+        potentialMoves.add(new PieceConfig(king.getPiece(), king.getOwner(), king.getX(), king.getY()+1));
+        potentialMoves.add(new PieceConfig(king.getPiece(), king.getOwner(), king.getX()-1, king.getY()+1));
+        potentialMoves.add(new PieceConfig(king.getPiece(), king.getOwner(), king.getX()+1, king.getY()+1));
+        potentialMoves.add(new PieceConfig(king.getPiece(), king.getOwner(), king.getX(), king.getY()-1));
+        potentialMoves.add(new PieceConfig(king.getPiece(), king.getOwner(), king.getX()-1, king.getY()-1));
+        potentialMoves.add(new PieceConfig(king.getPiece(), king.getOwner(), king.getX()+1, king.getY()-1));
+        potentialMoves.add(new PieceConfig(king.getPiece(), king.getOwner(), king.getX()-1, king.getY()));
+        potentialMoves.add(new PieceConfig(king.getPiece(), king.getOwner(), king.getX()+1, king.getY()));
         return potentialMoves;
     }
 
