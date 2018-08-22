@@ -21,7 +21,7 @@ public class CheckAndMate {
         if (kingHasPossibilityToMove(arrPieces, player)) {
             return false;
         }
-        if (threateningPieceCanBeBeaten()) {
+        if (threateningPiecesCanBeBeaten(arrPieces, player)) {
             return false;
         }
         if (otherPieceCanBlockThreateningPiece()) {
@@ -35,23 +35,24 @@ public class CheckAndMate {
                 .filter(piece -> piece.getOwner() == player)
                 .filter(piece -> piece.getPiece().equals("king"))
                 .findFirst().get();
-        List<PieceConfig> potentialMoves = findPotentialKingMoves(king);
-        List<PieceConfig> possibleMoves = potentialMoves.stream()
+        List<PieceConfig> possibleMovesWithoutThreat = findPotentialKingMoves(king).stream()
                 .filter(position -> !isPositionOccupied(position.getX(), position.getY(), arrPieces))
-                .collect(Collectors.toList());
-        List<PieceConfig> possibleMovesWithoutThreat = possibleMoves.stream()
-                .filter(kingPosition ->
-                    Stream.of(arrPieces)
-                            .filter(piece -> piece.getOwner() != player)
-                            .filter(piece -> pieceCanBeBeaten(piece, kingPosition, arrPieces))
-                            .collect(Collectors.toList())
-                            .isEmpty())
+                .filter(kingPosition -> !pieceCanBeBeatenBySomePiece(kingPosition, arrPieces))
                 .collect(Collectors.toList());
         return !possibleMovesWithoutThreat.isEmpty();
     }
 
-    private static boolean threateningPieceCanBeBeaten() {
-        return false;
+    private static boolean pieceCanBeBeatenBySomePiece(PieceConfig pieceToBeat, PieceConfig[] arrPieces) {
+        return Stream.of(arrPieces)
+                .filter(piece -> piece.getOwner() != pieceToBeat.getOwner())
+                .filter(piece -> pieceCanBeBeatenByThePiece(piece, pieceToBeat, arrPieces))
+                .collect(Collectors.toList())
+                .isEmpty();
+    }
+
+    private static boolean threateningPiecesCanBeBeaten(PieceConfig[] arrPieces, int player) {
+        return isCheck(arrPieces, player).stream()
+                .allMatch(threateningPiece -> pieceCanBeBeatenBySomePiece(threateningPiece, arrPieces));
     }
 
     private static boolean otherPieceCanBlockThreateningPiece() {
@@ -64,10 +65,10 @@ public class CheckAndMate {
                 .filter(piece -> piece.getPiece().equals("king"))
                 .findFirst().get();
 
-        return pieceCanBeBeaten(beatingPiece, king, arrPieces);
+        return pieceCanBeBeatenByThePiece(beatingPiece, king, arrPieces);
     }
 
-    private static boolean pieceCanBeBeaten(PieceConfig beatingPiece, PieceConfig pieceToBeat, PieceConfig[] arrPieces) {
+    private static boolean pieceCanBeBeatenByThePiece(PieceConfig beatingPiece, PieceConfig pieceToBeat, PieceConfig[] arrPieces) {
         switch(beatingPiece.getPiece()) {
             case "pawn": return checkIfPieceCanBeBeatenByPawn(beatingPiece, pieceToBeat);
             case "rook": return checkIfPieceCanBeBeatenByRook(beatingPiece, pieceToBeat, arrPieces);
