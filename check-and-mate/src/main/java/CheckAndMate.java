@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -10,15 +9,16 @@ public class CheckAndMate {
     public static Set<PieceConfig> isCheck(final PieceConfig[] arrPieces, int player) {
         return Stream.of(arrPieces)
                 .filter(piece -> piece.getOwner() != player)
-                .filter(piece -> canBeatKing(piece, arrPieces))
+                .filter(piece -> kingCanBeBeaten(piece, arrPieces))
                 .collect(Collectors.toSet());
     }
 
     public static boolean isMate(final PieceConfig[] arrPieces, int player) {
+
         if (isCheck(arrPieces, player).isEmpty()) {
             return false;
         }
-        if (kingHasPossibilityToMove()) {
+        if (kingHasPossibilityToMove(arrPieces, player)) {
             return false;
         }
         if (threateningPieceCanBeBeaten()) {
@@ -30,8 +30,24 @@ public class CheckAndMate {
         return true;
     }
 
-    private static boolean kingHasPossibilityToMove() {
-        return false;
+    private static boolean kingHasPossibilityToMove(PieceConfig[] arrPieces, int player) {
+        PieceConfig king = Stream.of(arrPieces)
+                .filter(piece -> piece.getOwner() == player)
+                .filter(piece -> piece.getPiece().equals("king"))
+                .findFirst().get();
+        List<PieceConfig> potentialMoves = findPotentialKingMoves(king);
+        List<PieceConfig> possibleMoves = potentialMoves.stream()
+                .filter(position -> !isPositionOccupied(position.getX(), position.getY(), arrPieces))
+                .collect(Collectors.toList());
+        List<PieceConfig> possibleMovesWithoutThreat = possibleMoves.stream()
+                .filter(kingPosition ->
+                    Stream.of(arrPieces)
+                            .filter(piece -> piece.getOwner() != player)
+                            .filter(piece -> pieceCanBeBeaten(piece, kingPosition, arrPieces))
+                            .collect(Collectors.toList())
+                            .isEmpty())
+                .collect(Collectors.toList());
+        return !possibleMovesWithoutThreat.isEmpty();
     }
 
     private static boolean threateningPieceCanBeBeaten() {
@@ -42,53 +58,53 @@ public class CheckAndMate {
         return false;
     }
 
-    private static boolean canBeatKing(PieceConfig beatingPiece, PieceConfig[] arrPieces) {
+    private static boolean kingCanBeBeaten(PieceConfig beatingPiece, PieceConfig[] arrPieces) {
         PieceConfig king = Stream.of(arrPieces)
                 .filter(piece -> piece.getOwner() != beatingPiece.getOwner())
                 .filter(piece -> piece.getPiece().equals("king"))
                 .findFirst().get();
 
-        return checkIfPieceCanBeatKing(beatingPiece, king, arrPieces);
+        return pieceCanBeBeaten(beatingPiece, king, arrPieces);
     }
 
-    private static boolean checkIfPieceCanBeatKing(PieceConfig beatingPiece, PieceConfig king, PieceConfig[] arrPieces) {
+    private static boolean pieceCanBeBeaten(PieceConfig beatingPiece, PieceConfig pieceToBeat, PieceConfig[] arrPieces) {
         switch(beatingPiece.getPiece()) {
-            case "pawn": return checkIfPawnCanBeatKing(beatingPiece, king, arrPieces);
-            case "rook": return checkIfRookCanBeatKing(beatingPiece, king, arrPieces);
-            case "knight": return checkIfKnightCanBeatKing(beatingPiece, king, arrPieces);
-            case "bishop": return checkIfBishopCanBeatKing(beatingPiece, king, arrPieces);
-            case "queen": return checkIfQueenCanBeatKing(beatingPiece, king, arrPieces);
-            case "king": return checkIfKingCanBeatKing(beatingPiece, king, arrPieces);
+            case "pawn": return checkIfPieceCanBeBeatenByPawn(beatingPiece, pieceToBeat);
+            case "rook": return checkIfPieceCanBeBeatenByRook(beatingPiece, pieceToBeat, arrPieces);
+            case "knight": return checkIfPieceCanBeBeatenByKnight(beatingPiece, pieceToBeat);
+            case "bishop": return checkIfPieceCanBeBeatenByBishop(beatingPiece, pieceToBeat, arrPieces);
+            case "queen": return checkIfPieceCanBeBeatenByQueen(beatingPiece, pieceToBeat, arrPieces);
+            case "king": return checkIfPieceCanBeBeatenByKing(beatingPiece, pieceToBeat);
             default: return false;
         }
     }
 
-    private static boolean checkIfPawnCanBeatKing(PieceConfig beatingPiece, PieceConfig king, PieceConfig[] arrPieces) {
-        List<PieceConfig> potentialBeatMoves = findPotentialPawnBeatMoves(beatingPiece);
+    private static boolean checkIfPieceCanBeBeatenByPawn(PieceConfig pawn, PieceConfig pieceToBeat) {
+        List<PieceConfig> potentialBeatMoves = findPotentialPawnBeatMoves(pawn);
         List<PieceConfig> beatMoves = potentialBeatMoves.stream()
-                .filter(beatMove -> king.getX() == beatMove.getX() && king.getY() == beatMove.getY())
+                .filter(beatMove -> pieceToBeat.getX() == beatMove.getX() && pieceToBeat.getY() == beatMove.getY())
                 .collect(Collectors.toList());
         return !beatMoves.isEmpty();
     }
 
-    private static boolean checkIfRookCanBeatKing(PieceConfig beatingPiece, PieceConfig king, PieceConfig[] arrPieces) {
-        List<PieceConfig> potentialMoves = findPotentialRookMoves(beatingPiece);
-        boolean isKingInPotentialMoves = isKingInPotentialMoves(king, potentialMoves);
+    private static boolean checkIfPieceCanBeBeatenByRook(PieceConfig rook, PieceConfig pieceToBeat, PieceConfig[] arrPieces) {
+        List<PieceConfig> potentialMoves = findPotentialRookMoves(rook);
+        boolean isKingInPotentialMoves = isKingInPotentialMoves(pieceToBeat, potentialMoves);
         boolean isWayToKingFree = false;
         if (isKingInPotentialMoves) {
-            if (king.getX() == beatingPiece.getX()) {
-                isWayToKingFree = IntStream.range(king.getY(), beatingPiece.getY())
+            if (pieceToBeat.getX() == rook.getX()) {
+                isWayToKingFree = IntStream.range(pieceToBeat.getY(), rook.getY())
                         .noneMatch(y -> {
-                            if (y != king.getY()) {
-                                return isPositionOccupied(beatingPiece.getX(), y, arrPieces);
+                            if (y != pieceToBeat.getY()) {
+                                return isPositionOccupied(rook.getX(), y, arrPieces);
                             }
                             return false;
                         });
-            } else if (king.getY() == beatingPiece.getY()) {
-                isWayToKingFree = IntStream.range(king.getX(), beatingPiece.getX())
+            } else if (pieceToBeat.getY() == rook.getY()) {
+                isWayToKingFree = IntStream.range(pieceToBeat.getX(), rook.getX())
                         .noneMatch(x -> {
-                            if (x != king.getX()) {
-                                return isPositionOccupied(x, beatingPiece.getY(), arrPieces);
+                            if (x != pieceToBeat.getX()) {
+                                return isPositionOccupied(x, rook.getY(), arrPieces);
                             }
                             return false;
                         });
@@ -97,30 +113,30 @@ public class CheckAndMate {
         return isWayToKingFree;
     }
 
-    private static boolean checkIfKnightCanBeatKing(PieceConfig beatingPiece, PieceConfig king, PieceConfig[] arrPieces) {
-        List<PieceConfig> potentialMoves = findPotentialKnightMoves(beatingPiece);
-        return isKingInPotentialMoves(king, potentialMoves);
+    private static boolean checkIfPieceCanBeBeatenByKnight(PieceConfig knight, PieceConfig pieceToBeat) {
+        List<PieceConfig> potentialMoves = findPotentialKnightMoves(knight);
+        return isKingInPotentialMoves(pieceToBeat, potentialMoves);
     }
 
-    private static boolean checkIfBishopCanBeatKing(PieceConfig beatingPiece, PieceConfig king, PieceConfig[] arrPieces) {
-        List<PieceConfig> potentialMoves = findPotentialBishopMoves(beatingPiece);
-        boolean isKingInPotentialMoves = isKingInPotentialMoves(king, potentialMoves);
+    private static boolean checkIfPieceCanBeBeatenByBishop(PieceConfig bishop, PieceConfig pieceToBeat, PieceConfig[] arrPieces) {
+        List<PieceConfig> potentialMoves = findPotentialBishopMoves(bishop);
+        boolean isKingInPotentialMoves = isKingInPotentialMoves(pieceToBeat, potentialMoves);
         boolean isWayToKingFree = false;
         if (isKingInPotentialMoves) {
-            List<PieceConfig> positionsBetweenBishopAndKing = findPositionsBetweenBishopAndKing(beatingPiece, king);
+            List<PieceConfig> positionsBetweenBishopAndKing = findPositionsBetweenBishopAndKing(bishop, pieceToBeat);
             isWayToKingFree = positionsBetweenBishopAndKing.stream()
                     .noneMatch(position -> isPositionOccupied(position.getX(), position.getY(), arrPieces));
         }
         return isWayToKingFree;
     }
 
-    private static boolean checkIfQueenCanBeatKing(PieceConfig beatingPiece, PieceConfig king, PieceConfig[] arrPieces) {
-        return checkIfBishopCanBeatKing(beatingPiece, king, arrPieces) || checkIfRookCanBeatKing(beatingPiece, king, arrPieces);
+    private static boolean checkIfPieceCanBeBeatenByQueen(PieceConfig queen, PieceConfig pieceToBeat, PieceConfig[] arrPieces) {
+        return checkIfPieceCanBeBeatenByBishop(queen, pieceToBeat, arrPieces) || checkIfPieceCanBeBeatenByRook(queen, pieceToBeat, arrPieces);
     }
 
-    private static boolean checkIfKingCanBeatKing(PieceConfig beatingPiece, PieceConfig king, PieceConfig[] arrPieces) {
-        List<PieceConfig> potentialMoves = findPotentialKingMoves(beatingPiece);
-        return isKingInPotentialMoves(king, potentialMoves);
+    private static boolean checkIfPieceCanBeBeatenByKing(PieceConfig king, PieceConfig pieceToBeat) {
+        List<PieceConfig> potentialMoves = findPotentialKingMoves(king);
+        return isKingInPotentialMoves(pieceToBeat, potentialMoves);
     }
 
     private static List<PieceConfig> findPositionsBetweenBishopAndKing(PieceConfig beatingPiece, PieceConfig king) {
