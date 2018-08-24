@@ -18,7 +18,7 @@ public class CheckAndMate {
         if (isCheck(arrPieces, player).isEmpty()) {
             return false;
         }
-        if (kingHasPossibilityToMove(arrPieces, player)) {
+        if (kingCanMoveSafelyWithoutBeating(arrPieces, player)) {
             return false;
         }
         if (threateningPiecesCanBeBeaten(arrPieces, player)) {
@@ -30,33 +30,59 @@ public class CheckAndMate {
         return true;
     }
 
-    private static boolean kingHasPossibilityToMove(PieceConfig[] arrPieces, int player) {
+    private static boolean kingCanMoveSafelyWithoutBeating(PieceConfig[] arrPieces, int player) {
         PieceConfig king = Stream.of(arrPieces)
                 .filter(piece -> piece.getOwner() == player)
                 .filter(piece -> piece.getPiece().equals("king"))
                 .findFirst().get();
-        List<PieceConfig> possibleMovesWithoutThreat = findPotentialKingMoves(king).stream()
+        List<PieceConfig> possibleSafeMoves = findPotentialKingMoves(king).stream()
                 .filter(position -> !isPositionOccupied(position.getX(), position.getY(), arrPieces))
                 .filter(kingPosition -> !pieceCanBeBeatenBySomePiece(kingPosition, arrPieces))
                 .collect(Collectors.toList());
-        return !possibleMovesWithoutThreat.isEmpty();
+        return !possibleSafeMoves.isEmpty();
+    }
+
+    private static boolean kingCanSafelyBeatPiece(PieceConfig king, PieceConfig pieceToBeat, PieceConfig[] arrPieces) {
+        if (pieceCanBeBeatenByThePiece(king, pieceToBeat, arrPieces)) {
+            return !pieceCanBeBeatenBySomePiece(king, arrPieces);
+        } else {
+            return true;
+        }
     }
 
     private static boolean pieceCanBeBeatenBySomePiece(PieceConfig pieceToBeat, PieceConfig[] arrPieces) {
         return Stream.of(arrPieces)
                 .filter(piece -> piece.getOwner() != pieceToBeat.getOwner())
-                .filter(piece -> pieceCanBeBeatenByThePiece(piece, pieceToBeat, arrPieces))
+                .anyMatch(piece -> pieceCanBeBeatenByThePiece(piece, pieceToBeat, arrPieces));
+    }
+
+    private static boolean threateningPiecesCanBeBeaten(PieceConfig[] arrPieces, int player) {
+        PieceConfig king = Stream.of(arrPieces)
+                .filter(piece -> piece.getOwner() == player)
+                .filter(piece -> piece.getPiece().equals("king"))
+                .findFirst().get();
+        PieceConfig[] arrPiecesWithoutKing = Stream.of(arrPieces)
+                .filter(piece -> !piece.equals(king))
+                .toArray(PieceConfig[]::new);
+        return isCheck(arrPieces, player).stream()
+                .filter(threateningPiece -> !pieceCanBeBeatenBySomePiece(threateningPiece, arrPiecesWithoutKing))
+                .filter(threateningPiece -> {
+                    if (isThreateningPieceInPotentialKingMoves(threateningPiece, king)) {
+                        return !kingCanSafelyBeatPiece(king, threateningPiece, arrPieces);
+                    } else {
+                        return true;
+                    }})
                 .collect(Collectors.toList())
                 .isEmpty();
     }
 
-    private static boolean threateningPiecesCanBeBeaten(PieceConfig[] arrPieces, int player) {
-        return isCheck(arrPieces, player).stream()
-                .allMatch(threateningPiece -> pieceCanBeBeatenBySomePiece(threateningPiece, arrPieces));
-    }
-
     private static boolean otherPieceCanBlockThreateningPiece() {
         return false;
+    }
+
+    private static boolean isThreateningPieceInPotentialKingMoves(PieceConfig threateningPiece, PieceConfig king) {
+        return findPotentialKingMoves(king).stream()
+                .anyMatch(kingPosition -> threateningPiece.getX() == kingPosition.getX() && threateningPiece.getY() == kingPosition.getY());
     }
 
     private static boolean kingCanBeBeaten(PieceConfig beatingPiece, PieceConfig[] arrPieces) {
@@ -188,11 +214,11 @@ public class CheckAndMate {
     private static List<PieceConfig> findPotentialPawnBeatMoves(PieceConfig beatingPiece) {
         List<PieceConfig> potentialBeatMoves = new ArrayList<>();
         if (beatingPiece.getOwner() == 0) {
-            potentialBeatMoves.add(new PieceConfig(beatingPiece.getPiece(), beatingPiece.getOwner(), beatingPiece.getX()-1, beatingPiece.getY()-1));
-            potentialBeatMoves.add(new PieceConfig(beatingPiece.getPiece(), beatingPiece.getOwner(), beatingPiece.getX()+1, beatingPiece.getY()-1));
+            addPotentialMove(new PieceConfig(beatingPiece.getPiece(), beatingPiece.getOwner(), beatingPiece.getX()-1, beatingPiece.getY()-1), potentialBeatMoves);
+            addPotentialMove(new PieceConfig(beatingPiece.getPiece(), beatingPiece.getOwner(), beatingPiece.getX()+1, beatingPiece.getY()-1), potentialBeatMoves);
         } else if (beatingPiece.getOwner() == 1) {
-            potentialBeatMoves.add(new PieceConfig(beatingPiece.getPiece(), beatingPiece.getOwner(), beatingPiece.getX()-1, beatingPiece.getY()+1));
-            potentialBeatMoves.add(new PieceConfig(beatingPiece.getPiece(), beatingPiece.getOwner(), beatingPiece.getX()+1, beatingPiece.getY()+1));
+            addPotentialMove(new PieceConfig(beatingPiece.getPiece(), beatingPiece.getOwner(), beatingPiece.getX()-1, beatingPiece.getY()+1), potentialBeatMoves);
+            addPotentialMove(new PieceConfig(beatingPiece.getPiece(), beatingPiece.getOwner(), beatingPiece.getX()+1, beatingPiece.getY()+1), potentialBeatMoves);
         }
         return potentialBeatMoves;
     }
@@ -212,27 +238,27 @@ public class CheckAndMate {
 
     private static List<PieceConfig> findPotentialKingMoves(PieceConfig king) {
         List<PieceConfig> potentialMoves = new ArrayList<>();
-        potentialMoves.add(new PieceConfig(king.getPiece(), king.getOwner(), king.getX(), king.getY()+1));
-        potentialMoves.add(new PieceConfig(king.getPiece(), king.getOwner(), king.getX()-1, king.getY()+1));
-        potentialMoves.add(new PieceConfig(king.getPiece(), king.getOwner(), king.getX()+1, king.getY()+1));
-        potentialMoves.add(new PieceConfig(king.getPiece(), king.getOwner(), king.getX(), king.getY()-1));
-        potentialMoves.add(new PieceConfig(king.getPiece(), king.getOwner(), king.getX()-1, king.getY()-1));
-        potentialMoves.add(new PieceConfig(king.getPiece(), king.getOwner(), king.getX()+1, king.getY()-1));
-        potentialMoves.add(new PieceConfig(king.getPiece(), king.getOwner(), king.getX()-1, king.getY()));
-        potentialMoves.add(new PieceConfig(king.getPiece(), king.getOwner(), king.getX()+1, king.getY()));
+        addPotentialMove(new PieceConfig(king.getPiece(), king.getOwner(), king.getX(), king.getY()+1), potentialMoves);
+        addPotentialMove(new PieceConfig(king.getPiece(), king.getOwner(), king.getX()-1, king.getY()+1), potentialMoves);
+        addPotentialMove(new PieceConfig(king.getPiece(), king.getOwner(), king.getX()+1, king.getY()+1), potentialMoves);
+        addPotentialMove(new PieceConfig(king.getPiece(), king.getOwner(), king.getX(), king.getY()-1), potentialMoves);
+        addPotentialMove(new PieceConfig(king.getPiece(), king.getOwner(), king.getX()-1, king.getY()-1), potentialMoves);
+        addPotentialMove(new PieceConfig(king.getPiece(), king.getOwner(), king.getX()+1, king.getY()-1), potentialMoves);
+        addPotentialMove(new PieceConfig(king.getPiece(), king.getOwner(), king.getX()-1, king.getY()), potentialMoves);
+        addPotentialMove(new PieceConfig(king.getPiece(), king.getOwner(), king.getX()+1, king.getY()), potentialMoves);
         return potentialMoves;
     }
 
     private static List<PieceConfig> findPotentialKnightMoves(PieceConfig knight) {
         List<PieceConfig> potentialMoves = new ArrayList<>();
-        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()+2, knight.getY()+1));
-        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()-2, knight.getY()+1));
-        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()+1, knight.getY()+2));
-        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()-1, knight.getY()+2));
-        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()+2, knight.getY()-1));
-        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()-2, knight.getY()-1));
-        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()+1, knight.getY()-2));
-        potentialMoves.add(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()-1, knight.getY()-2));
+        addPotentialMove(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()+2, knight.getY()+1), potentialMoves);
+        addPotentialMove(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()-2, knight.getY()+1), potentialMoves);
+        addPotentialMove(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()+1, knight.getY()+2), potentialMoves);
+        addPotentialMove(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()-1, knight.getY()+2), potentialMoves);
+        addPotentialMove(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()+2, knight.getY()-1), potentialMoves);
+        addPotentialMove(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()-2, knight.getY()-1), potentialMoves);
+        addPotentialMove(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()+1, knight.getY()-2), potentialMoves);
+        addPotentialMove(new PieceConfig(knight.getPiece(), knight.getOwner(), knight.getX()-1, knight.getY()-2), potentialMoves);
         return potentialMoves;
     }
 
@@ -241,8 +267,30 @@ public class CheckAndMate {
                 .anyMatch(rook -> rook.getX() == king.getX() && rook.getY() == king.getY());
     }
 
+    private static boolean isPositionOccupiedByFriendPiece(PieceConfig potentialPosition, PieceConfig[] arrPieces) {
+        return Stream.of(arrPieces)
+                .filter(piece -> piece.getOwner() == potentialPosition.getOwner())
+                .anyMatch(pieceConfig -> pieceConfig.getX() == potentialPosition.getX() && pieceConfig.getY() == potentialPosition.getY());
+    }
+
+    private static boolean isPositionOccupiedByOpponentPiece(PieceConfig potentialPosition, PieceConfig[] arrPieces) {
+        return Stream.of(arrPieces)
+                .filter(piece -> piece.getOwner() != potentialPosition.getOwner())
+                .anyMatch(pieceConfig -> pieceConfig.getX() == potentialPosition.getX() && pieceConfig.getY() == potentialPosition.getY());
+    }
+
     private static boolean isPositionOccupied(int x, int y, PieceConfig[] arrPieces) {
         return Stream.of(arrPieces)
                 .anyMatch(pieceConfig -> pieceConfig.getX() == x && pieceConfig.getY() == y);
+    }
+
+    private static void addPotentialMove(PieceConfig piece, List<PieceConfig> potentialMoves) {
+        if (isPositionInsideBoard(piece.getX(), piece.getY())) {
+            potentialMoves.add(new PieceConfig(piece.getPiece(), piece.getOwner(), piece.getX(), piece.getY()));
+        }
+    }
+
+    private static boolean isPositionInsideBoard(int x, int y) {
+        return x >= 0 && x <= 7 && y >= 0 && y <= 7;
     }
 }
